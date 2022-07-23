@@ -5,20 +5,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Repository;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 import study.datajpa.entity.Team;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Transactional
@@ -29,6 +30,9 @@ class MemberRepositoryTest {
     MemberRepository memberRepository;
     @Autowired
     TeamRepository teamRepository;
+
+    @PersistenceContext
+    EntityManager em;
 
     @Test
     void testMember() {
@@ -175,7 +179,12 @@ class MemberRepositoryTest {
 
         PageRequest pageRequest = PageRequest.of(0, 3, Sort.by(Sort.Direction.DESC, "username"));
 
-        Page<Member> page = memberRepository.findByAge(10, pageRequest);
+        Page<Member> page = memberRepository.findPageByAge(10, pageRequest);
+
+        Page<MemberDto> map = page.map(member -> new MemberDto(member.getId(), member.getUsername(), null));
+
+        Slice<Member> slice = memberRepository.findSliceByAge(10, pageRequest);
+
         List<Member> content = page.getContent();
         long totalElements = page.getTotalElements();
 
@@ -188,5 +197,20 @@ class MemberRepositoryTest {
 
     }
 
+    @Test
+    void bulkUpdate() {
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 20));
+        memberRepository.save(new Member("member3", 30));
+        memberRepository.save(new Member("member4", 40));
+        memberRepository.save(new Member("member5", 50));
+        int resultCount = memberRepository.bulkAgePlus(20);
+        em.flush();
+        em.clear();
 
+
+        assertThat(resultCount).isEqualTo(4);
+
+    }
 }
+
