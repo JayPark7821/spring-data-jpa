@@ -5,24 +5,26 @@ import lombok.*;
 import javax.persistence.*;
 
 @Entity
-@Getter @Setter
-@NoArgsConstructor(access= AccessLevel.PROTECTED)
-@ToString(of = {"id","username","age"})
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@ToString(of = {"id", "username", "age"})
 @NamedQuery(
-        name="Member.findByUsername",
+        name = "Member.findByUsername",
         query = "select m from Member m where m.username = :username"
 )
+@NamedEntityGraph(name = "Member.all", attributeNodes = @NamedAttributeNode("team"))
 public class Member {
 
     @Id
     @GeneratedValue
-    @Column(name="member_id")
+    @Column(name = "member_id")
     private Long id;
     private String username;
     private int age;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="team_id")
+    @JoinColumn(name = "team_id")
     private Team team;
 
     public Member(String username) {
